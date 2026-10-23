@@ -35,7 +35,7 @@ Read `X-Audio-Sample-Rate` (44100) before playing raw PCM.
 ## Deploy your own
 
 Prerequisites: DGX Spark (GB10), Docker with NVIDIA runtime, `docker compose`,
-about 40 GiB free disk, internet access.
+ports 8094 and 8101 free, about 40 GiB free disk, internet access.
 
 ```bash
 git clone <this-repo> dgx-spark-ming-tts
