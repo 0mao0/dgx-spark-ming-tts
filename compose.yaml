@@ -1,0 +1,31 @@
+services:
+  ming-tts:
+    build:
+      context: .
+      args:
+        PIP_INDEX_URL: ${PIP_INDEX_URL:-https://pypi.org/simple}
+    image: dgx-spark-ming-tts:0.1
+    container_name: ming-tts
+    network_mode: host
+    ipc: host
+    privileged: true
+    shm_size: 16gb
+    restart: unless-stopped
+    volumes:
+      - ./models:/models:ro
+    environment:
+      MODEL_DIR: /models/Ming-3.0-tts-tiny
+      SERVED_NAME: ming3
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8094/v1/models', timeout=3)"]
+      interval: 30s
+      timeout: 5s
+      retries: 20
+      start_period: 300s

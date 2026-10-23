@@ -1,0 +1,12 @@
+.git
+.gitignore
+.gitattributes
+models
+assets
+scripts
+deploy/vps
+demo.wav
+README.md
+NOTICE
+LICENSE
+THIRD_PARTY_NOTICES.md

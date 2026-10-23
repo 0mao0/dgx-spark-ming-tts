@@ -4,5 +4,6 @@ __pycache__/
 *.pcm
 *.log
 out/
+models/
 .env
 ming-token.conf
