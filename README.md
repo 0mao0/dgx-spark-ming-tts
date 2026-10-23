@@ -97,6 +97,17 @@ Public HTTPS with a bearer token (optional): run `deploy/vps/install.sh` on a
 VPS, as described in its header. The engine itself has no authentication; do
 not expose 8094 or 8101 directly.
 
+## Updating
+
+The repo pins the base image tag, `vllm==0.32.0`, overlay `091f7363`, and
+weights `8cf79a89`; upstream changes do not arrive until you change them.
+When PR #9198 merges and a newer vllm-omni release ships, remove the overlay,
+install that release, rebuild, and rerun `scripts/probe10.py`. Keep the
+previous image tag for rollback. To move weights, delete
+`models/Ming-3.0-tts-tiny` and rerun with `MODEL_REVISION=<sha> ./deploy.sh`.
+`./scripts/check_upstream.sh` prints current upstream versions and changes
+nothing.
+
 ## Credits
 
 Model: `inclusionAI/Ming-3.0-tts-tiny`, MIT. Engine: vLLM-Omni, Apache-2.0,

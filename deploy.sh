@@ -4,14 +4,16 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 mkdir -p models
+MODEL_REVISION=${MODEL_REVISION:-8cf79a893e4c244e7acdc2699271dd84fe04d45f}
 if [ ! -f models/Ming-3.0-tts-tiny/config.json ]; then
-  echo "[1/3] downloading weights (~17 GiB, first run only)"
-  docker run --rm -v "$PWD/models:/models" python:3.12-slim bash -lc '
+  echo "[1/3] downloading weights (~17 GiB, revision ${MODEL_REVISION:0:8})"
+  docker run --rm -e MODEL_REVISION="$MODEL_REVISION" -v "$PWD/models:/models" python:3.12-slim bash -lc '
     pip install -q modelscope &&
     modelscope download --model inclusionAI/Ming-3.0-tts-tiny \
+      --revision "$MODEL_REVISION" \
       --local_dir /models/Ming-3.0-tts-tiny'
 else
-  echo "[1/3] weights present"
+  echo "[1/3] weights present (pinned; delete models/Ming-3.0-tts-tiny to change revision)"
 fi
 
 echo "[2/3] building and starting"
