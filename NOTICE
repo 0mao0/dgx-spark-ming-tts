@@ -1,0 +1,18 @@
+Ming-3.0-TTS recipes for GB10
+Copyright 2026 0mao0
+
+This repository documents and scripts how to serve
+inclusionAI/Ming-3.0-tts-tiny on a single NVIDIA GB10 with vLLM-Omni: the
+ten-stream deployment profile, streaming proxy, systemd units, probes,
+benchmarks, and an optional token-protected public route.
+
+Built on vLLM-Omni, Copyright 2026 vLLM-Omni contributors,
+https://github.com/vllm-project/vllm-omni, licensed under the Apache License
+2.0. The deployment pins the head of PR #9198, an unmerged draft; no engine
+source is redistributed here.
+
+Model weights are not redistributed. The model is
+inclusionAI/Ming-3.0-tts-tiny, MIT License; see README.md for sources.
+
+This repository is unofficial and is not endorsed by inclusionAI or the
+vLLM-Omni authors.

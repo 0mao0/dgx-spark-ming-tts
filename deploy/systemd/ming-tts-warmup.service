@@ -1,0 +1,12 @@
+[Unit]
+Description=Ming-3.0-TTS warmup: wait for :8094 then run one speech request (absorb cold compile)
+After=ming-tts.service
+Requires=ming-tts.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/docker exec omni python3 /out/warm_ming.py
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

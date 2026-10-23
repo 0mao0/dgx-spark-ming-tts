@@ -1,0 +1,8 @@
+# Bearer token for /api/ming/v1. Keep this file out of version control.
+# Generate one with:  printf 'mng_'; openssl rand -hex 24
+# Rotate: change the value and reload nginx.
+# Revoke: delete the token line (default 0) and reload; every caller gets 401.
+map $http_authorization $ming_ok {
+    default 0;
+    "~^Bearer mng_REPLACE_WITH_A_RANDOM_TOKEN" 1;
+}

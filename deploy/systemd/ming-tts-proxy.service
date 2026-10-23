@@ -1,0 +1,16 @@
+[Unit]
+Description=Ming-3.0-TTS streaming proxy on :8101 (nginx in omni container)
+After=docker.service ming-tts.service
+Requires=docker.service
+Wants=ming-tts.service
+
+[Service]
+Type=simple
+ExecStartPre=-/usr/bin/docker exec omni nginx -s quit -c /out/nginx_ming_proxy.conf
+ExecStartPre=-/bin/sleep 1
+ExecStart=/usr/bin/docker exec omni nginx -g "daemon off;" -c /out/nginx_ming_proxy.conf
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
