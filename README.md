@@ -38,7 +38,7 @@ Prerequisites: DGX Spark (GB10), Docker with NVIDIA runtime, `docker compose`,
 ports 8094 and 8101 free, about 40 GiB free disk, internet access.
 
 ```bash
-git clone <this-repo> dgx-spark-ming-tts
+git clone https://github.com/0mao0/dgx-spark-ming-tts.git
 cd dgx-spark-ming-tts
 ./deploy.sh
 ```
