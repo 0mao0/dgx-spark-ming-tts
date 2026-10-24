@@ -51,8 +51,23 @@ body = json.dumps(payload).encode()
 req = urllib.request.Request(
     BASE + "/v1/audio/speech", data=body, headers={"Content-Type": "application/json"}
 )
-t0 = time.time()
-resp = urllib.request.urlopen(req, timeout=300)
+# /v1/models answers 200 before the engine can produce audio; during graph
+# capture a speech request returns 500. Retry the request itself (up to ~6 min)
+# instead of treating that first 500 as fatal — otherwise the cold-compile cost
+# lands on the first real caller.
+resp = None
+last_error = None
+for attempt in range(24):
+    try:
+        t0 = time.time()
+        resp = urllib.request.urlopen(req, timeout=300)
+        break
+    except Exception as error:
+        last_error = error
+        time.sleep(15)
+if resp is None:
+    raise SystemExit(f"warmup speech request failed after retries: {last_error}")
+
 first = None
 total = 0
 for chunk in iter(lambda: resp.read(65536), b""):

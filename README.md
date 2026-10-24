@@ -84,6 +84,44 @@ PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple ./deploy.sh
 - **Voice cloning:** keep `ref_text` in a file next to the reference audio. A
   mismatched transcript shifts prosody and can sound like a dialect.
 
+## Generation length and determinism
+
+- **The stock checkpoint cuts every request at exactly 20.00 s.** The limit is
+  `tts_config.maximum_decode_steps = 250` in `models/Ming-3.0-tts-tiny/config.json`
+  (250 steps x 12.5 steps/s). Longer text is truncated mid-word and the stream
+  still ends with a normal `speech.audio.done`, so clients see "complete" audio
+  that stops halfway. `deploy.sh` raises it to 1000 (80 s); check with
+  `python3 -c 'import json;print(json.load(open("models/Ming-3.0-tts-tiny/config.json"))["tts_config"]["maximum_decode_steps"])'`.
+- **`max_tokens: 801` in the deploy YAML does not bound speech length.** The
+  adapter overwrites stage sampling per request from the steps above.
+  `MAX_DECODE_STEPS` in the overlay is only the ceiling for a per-request
+  `max_new_tokens` (800 stock, 2400 in this image).
+- **Temperature 0 does not make output reproducible; `seed` does.** The same
+  text returned 35 s and 48 s on consecutive requests without a seed. Pass an
+  explicit `seed` in the request body when you need a stable result.
+- **Some seeds degenerate to 1.04 s of near-silence.** The model emits the end
+  token after `minimum_decode_steps` (13) for unlucky seeds (e.g. 42 on a
+  255-character text). Detect `duration < 2 s` and retry with another seed;
+  3 attempts is plenty in practice.
+- **Measured after the cap fix:** 194 Chinese characters read to the end in
+  35–48 s depending on seed, wall time 16–19 s (RTF ≈ 0.47). Text beyond
+  ~255 characters can still hit the 80 s ceiling — split long articles into
+  paragraph-sized requests and concatenate.
+
+## Client-side notes
+
+- **Streaming has no known total length.** A progress bar filled from received
+  bytes is a heuristic, not progress. Show "buffered ahead: X s" while frames
+  arrive and switch to real progress only after `speech.audio.done`.
+- **A dropped stream looks like success** unless you check for the done event.
+  If the reader hits EOF without `speech.audio.done`, report the interruption
+  and the seconds already generated; retry only when zero audio arrived.
+- **Keep the received PCM to offer a full-file check.** Concatenating the
+  frames and prepending a 44-byte RIFF header gives a WAV the user can replay
+  and download without a second request.
+- **Play at 44100 Hz, not 24 kHz**, and stop every scheduled `AudioBufferSource`
+  when the user hits stop — stopping the fetch alone leaves queued audio playing.
+
 ## Operations
 
 ```bash

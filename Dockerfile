@@ -15,6 +15,13 @@ RUN mkdir -p /opt/pr9198 \
  && curl -fsSL https://codeload.github.com/vllm-project/vllm-omni/tar.gz/091f736324bd347d19282840d0d1298180f3ae6b \
     | tar -xz -C /opt/pr9198 --strip-components=1
 
+# The overlay validates per-request max_new_tokens against a hard-coded
+# MAX_DECODE_STEPS=800 (~64 s of audio). Raise it to 2400 so callers can ask
+# for longer generations; the default still comes from the model config,
+# which deploy.sh patches.
+RUN sed -i 's/^MAX_DECODE_STEPS = 800$/MAX_DECODE_STEPS = 2400/' \
+    /opt/pr9198/vllm_omni/model_executor/models/ming3_tts/constants.py
+
 COPY deploy/ming3_9198_gb10.yaml /opt/ming/deploy.yaml
 COPY deploy/nginx_ming_proxy.conf /opt/ming/nginx.conf
 COPY deploy/warm_ming.py /opt/ming/warm_ming.py
