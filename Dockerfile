@@ -22,6 +22,13 @@ RUN mkdir -p /opt/pr9198 \
 RUN sed -i 's/^MAX_DECODE_STEPS = 800$/MAX_DECODE_STEPS = 2400/' \
     /opt/pr9198/vllm_omni/model_executor/models/ming3_tts/constants.py
 
+# vllm is installed --no-deps to keep the base image's torch 2.13, so its own
+# dependencies and the overlay's imports have to be installed explicitly.
+# Without this the container dies at import time (aenum, cbor2, httpx2, ...).
+COPY deploy/tested-pip-freeze.txt /opt/ming/tested-pip-freeze.txt
+RUN pip install --no-cache-dir --no-deps --index-url "${PIP_INDEX_URL}" \
+      -r /opt/ming/tested-pip-freeze.txt
+
 COPY deploy/ming3_9198_gb10.yaml /opt/ming/deploy.yaml
 COPY deploy/nginx_ming_proxy.conf /opt/ming/nginx.conf
 COPY deploy/warm_ming.py /opt/ming/warm_ming.py

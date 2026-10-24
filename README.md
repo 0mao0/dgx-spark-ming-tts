@@ -3,6 +3,24 @@
 Ming-3.0-TTS tiny on one DGX Spark (GB10): 44.1 kHz streaming, ten concurrent
 streams, one container, one command.
 
+## Deployment status (2026-10-24)
+
+The compose recipe builds and boots, but does **not** yet stand up a working
+server on its own. Exercised end-to-end on a DGX Spark GB10:
+
+| Stage | Result |
+|---|---|
+| image build (base + vllm 0.32 + overlay + patch) | passes |
+| container import chain | passes after installing `deploy/tested-pip-freeze.txt` (was missing ~80 packages) |
+| engine stage 0 weight load (30 shards) | passes |
+| engine stage 1 model registration | **fails**: `Ming3TTSForConditionalGeneration` is not resolved by vllm's registry, API server crash-loops |
+
+The serving deployment behind `tts.angineer.cn` predates this repository and
+runs a hand-assembled container; the compose path has not reached parity with
+it yet. Track the gap in the issue tracker before relying on `./deploy.sh` in
+production. The dependency pinning above and the length-cap patch are correct
+and worth keeping.
+
 ## Result
 
 | Metric | Value |
