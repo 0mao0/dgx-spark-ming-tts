@@ -10,18 +10,18 @@ tree):
 
 | Stage | Result |
 |---|---|
-| image build (base + vllm 0.32 + overlay + patches) | passes |
-| container import chain | passes with `deploy/tested-pip-freeze.txt` (the bare recipe was missing ~80 packages) |
-| engine startup | passes once the released `vllm-omni==0.30.0` package is installed — its dist-info/plugin registration is required even though the source overlay shadows the modules |
-| serving + zero-shot cloning | verified: `/v1/models` lists `ming3`, a reference from `voices/` clones and streams 44.1 kHz PCM |
-| cold start | first request pays ~40 s of graph capture; the entrypoint's warmup request absorbs it |
+| image build (NVIDIA CUDA 13 base + torch 2.13 cu130 + vLLM 0.32 + overlay) | passes |
+| container import chain | passes — the bare CUDA base needs `omegaconf`, `soundfile`, `av`, `aenum`, `prettytable`, `janus`, `einx`, `s3tokenizer`, `sse-starlette`, `diffusers`, `x_transformers` on top of vLLM's own graph, plus pins `transformers==5.14.1` / `tokenizers==0.22.2` / `huggingface_hub==1.33.0` and the released `vllm-omni==0.30.0` package |
+| engine startup | passes with `--stage-init-timeout 1800`: the first boot JIT-compiles FlashInfer MoE kernels (~15 min); the 300 s default init timeout kills the engine before that — persist `/root/.cache` to pay it once |
+| serving + zero-shot cloning | verified: `/v1/models` lists `ming3`, a reference from `voices/` clones and streams 44.1 kHz PCM (TTFT 0.6 s warm) |
+| long text | verified: 225 characters split into two 200-char segments produce 62 s of complete audio; the server has no splitting on the HTTP path |
 
 Known environment constraint: a 121 GiB unified-memory Spark runs **one** engine
 only. Two full instances exhaust the GPU allocator (`NV_ERR_NO_MEMORY`) even
 when `free` reports tens of GiB available — stop the other engine before
-starting a second one. The build also needs codeload reachability in the image
-build; if GitHub is blocked, download the pinned tarball yourself and swap the
-`curl` line for a `COPY`.
+starting a second one. The build also needs codeload reachability in the image build; if GitHub is
+blocked, download the pinned tarball yourself and swap the `curl` line for a
+`COPY`. Engine startup needs `--stage-init-timeout 1800` on the first boot.
 
 ## Result
 
@@ -151,9 +151,12 @@ word for word — a mismatch shifts prosody and can sound like a dialect.
   255-character text). Detect `duration < 2 s` and retry with another seed;
   3 attempts is plenty in practice.
 - **Measured after the cap fix:** 194 Chinese characters read to the end in
-  35–48 s depending on seed, wall time 16–19 s (RTF ≈ 0.47). Text beyond
-  ~255 characters can still hit the 80 s ceiling — split long articles into
-  paragraph-sized requests and concatenate.
+  35–48 s depending on seed, wall time 16–19 s (RTF ≈ 0.47).
+- **Long text must be split client-side.** One HTTP request is truncated at the
+  step limit (80 s after the patch) with a normal `speech.audio.done` — there is
+  no error and no truncation flag. `scripts/tts_with_ref.py` splits on sentence
+  boundaries at `--max-chars` (default 200, ≈40 s) and concatenates the PCM;
+  do the same in your client.
 
 ## Client-side notes
 

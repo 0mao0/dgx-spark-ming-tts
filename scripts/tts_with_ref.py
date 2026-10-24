@@ -14,6 +14,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import struct
 import time
 import urllib.request
@@ -40,6 +41,9 @@ def main() -> int:
     ap.add_argument("--ref-text", default="", help="transcript; defaults to the sibling .txt")
     ap.add_argument("--seed", type=int, default=7,
                     help="fixed seed keeps one text stable; some seeds degenerate (see README)")
+    ap.add_argument("--max-chars", type=int, default=200,
+                    help="split long text into segments of at most this many characters "
+                         "(0 disables; the server truncates one request at 80 s of audio)")
     ap.add_argument("--out", default="out.wav")
     args = ap.parse_args()
 
@@ -66,7 +70,8 @@ def main() -> int:
     }
     token = os.environ.get("MING_TOKEN")
 
-    def synthesize(seed: int) -> tuple[bytes, float, float]:
+    def synthesize(text: str, seed: int) -> tuple[bytes, float, float]:
+        payload["input"] = text
         payload["seed"] = seed
         req = urllib.request.Request(
             args.url,
@@ -95,26 +100,51 @@ def main() -> int:
                     break
         return bytes(pcm_local), first or 0.0, time.time() - started
 
-    # Unlucky seeds make the model emit the end token after the minimum number
-    # of steps: a ~1 s clip instead of the sentence. Retry with the next seed.
+    # The server truncates every request at tts_config.maximum_decode_steps
+    # (20 s stock, 80 s with the deploy patch) and still reports success, so
+    # long text has to be split client-side. Segment on sentence boundaries.
+    def split_text(text: str, limit: int) -> list[str]:
+        units = re.findall(r"[^。！？；\n]+[。！？；\n]?", text) or [text]
+        out, cur = [], ""
+        for unit in units:
+            if cur and len(cur) + len(unit) > limit:
+                out.append(cur)
+                cur = ""
+            if len(unit) > limit:
+                out.extend(unit[i:i + limit] for i in range(0, len(unit), limit))
+            else:
+                cur += unit
+        if cur:
+            out.append(cur)
+        return out or [text]
+
+    segments = split_text(args.text, args.max_chars) if args.max_chars > 0 else [args.text]
     pcm = b""
     first = 0.0
     wall = 0.0
-    for attempt in range(3):
-        seed = args.seed + attempt
-        pcm, first, wall = synthesize(seed)
-        seconds = len(pcm) / 2 / SAMPLE_RATE
-        if seconds >= 2 or len(args.text) <= 8 or attempt == 2:
-            print(f"seed {seed}: {seconds:.2f} s of audio")
-            break
-        print(f"seed {seed}: degenerate ({seconds:.2f} s), retrying with seed {seed + 1}")
+    for index, segment in enumerate(segments, 1):
+        label = f"segment {index}/{len(segments)}" if len(segments) > 1 else "request"
+        # Unlucky seeds make the model emit the end token after the minimum
+        # number of steps: a ~1 s clip instead of the sentence. Retry.
+        for attempt in range(3):
+            seed = args.seed + attempt
+            part, part_first, part_wall = synthesize(segment, seed)
+            seconds = len(part) / 2 / SAMPLE_RATE
+            if seconds >= 2 or len(segment) <= 8 or attempt == 2:
+                print(f"{label}: seed {seed}, {seconds:.2f} s of audio")
+                break
+            print(f"{label}: seed {seed} degenerate ({seconds:.2f} s), retrying")
+        if first == 0.0:
+            first = part_first
+        wall += part_wall
+        pcm += part
 
     with open(args.out, "wb") as handle:
         handle.write(wav_header(len(pcm)))
         handle.write(pcm)
 
     print(
-        f"{args.out}: {len(pcm) / 2 / SAMPLE_RATE:.2f} s audio, "
+        f"{args.out}: {len(pcm) / 2 / SAMPLE_RATE:.2f} s audio in {len(segments)} segment(s), "
         f"first frame {first:.2f} s, wall {wall:.2f} s"
     )
     return 0
