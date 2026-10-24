@@ -72,26 +72,29 @@ PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple ./deploy.sh
 ## Reference voices
 
 Without `ref_audio` the engine speaks with its built-in default voice. Cloning
-any other voice needs a WAV plus its exact transcript; two ready-to-use
-references ship in `voices/` (16 kHz mono PCM16, from the Apache-2.0
-[CosyVoice](https://github.com/QwenAudio/CosyVoice) demo assets):
+any other voice needs a WAV plus its exact transcript; four ready-to-use
+references ship in `voices/` (16 kHz mono PCM16, sample voices published with
+the Apache-2.0 [CosyVoice](https://github.com/QwenAudio/CosyVoice) project):
 
-| File | Audio | Transcript |
+| File | Voice | Audio |
 |---|---|---|
-| `voices/ref-01-3s.wav` | 3.5 s | 希望你以后能够做的比我还好呦。 |
-| `voices/ref-02-14s.wav` | 13.8 s | 在那之后，完全收购那家公司，因此保持管理层的一致性，利益与即将加入家族的资产保持一致。这就是我们有时不买下全部的原因。 |
+| `voices/serena.wav` | Serena · female | 8.3 s |
+| `voices/aiden.wav` | Aiden · male | 8.2 s |
+| `voices/vivian.wav` | Vivian · female | 9.2 s |
+| `voices/uncle_fu.wav` | Uncle Fu · male | 11.3 s |
+
+All four transcripts read the same sentence: 各位同事，今天的施工例会改到下午三点，请大家准时到第二会议室，会后把材料交给我。
 
 ```bash
 # streams the response and writes a 44.1 kHz WAV
 python3 scripts/tts_with_ref.py --text "你好，这是一段克隆音色的试听。" \
-  --ref voices/ref-02-14s.wav --out cloned.wav
+  --ref voices/serena.wav --out cloned.wav
 ```
 
 Bring your own: record 5–15 s of clean speech, convert to 16 kHz mono WAV, and
-store the transcript in a `.txt` beside it. The 3.5 s reference works but is
-less stable than the 14 s one; around 10 s is the sweet spot. `ref_text` must
-match the audio word for word — a mismatch shifts prosody and can sound like a
-dialect.
+store the transcript in a `.txt` beside it. Shorter references clone but are
+less stable; around 10 s is the sweet spot. `ref_text` must match the audio
+word for word — a mismatch shifts prosody and can sound like a dialect.
 
 ## Notes
 
