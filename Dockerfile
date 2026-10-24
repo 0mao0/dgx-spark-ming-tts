@@ -26,8 +26,17 @@ RUN sed -i 's/^MAX_DECODE_STEPS = 800$/MAX_DECODE_STEPS = 2400/' \
 # dependencies and the overlay's imports have to be installed explicitly.
 # Without this the container dies at import time (aenum, cbor2, httpx2, ...).
 COPY deploy/tested-pip-freeze.txt /opt/ming/tested-pip-freeze.txt
-RUN pip install --no-cache-dir --no-deps --index-url "${PIP_INDEX_URL}" \
-      -r /opt/ming/tested-pip-freeze.txt
+# --ignore-installed: the base image ships packages without RECORD files
+# (e.g. PyJWT 2.7.0), so pip cannot uninstall them before installing the pins.
+RUN pip install --no-cache-dir --no-deps --ignore-installed \
+      --index-url "${PIP_INDEX_URL}" -r /opt/ming/tested-pip-freeze.txt
+
+# Engine startup needs vLLM-Omni's installed dist-info and plugin registration;
+# the source overlay on PYTHONPATH only shadows the modules. Without this the
+# stage engine cores die during initialization with a silent
+# "Engine core initialization failed".
+RUN pip install --no-cache-dir --no-deps --ignore-installed \
+      --index-url "${PIP_INDEX_URL}" vllm-omni==0.30.0
 
 COPY deploy/ming3_9198_gb10.yaml /opt/ming/deploy.yaml
 COPY deploy/nginx_ming_proxy.conf /opt/ming/nginx.conf

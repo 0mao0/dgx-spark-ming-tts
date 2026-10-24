@@ -5,21 +5,23 @@ streams, one container, one command.
 
 ## Deployment status (2026-10-24)
 
-The compose recipe builds and boots, but does **not** yet stand up a working
-server on its own. Exercised end-to-end on a DGX Spark GB10:
+Exercise state, end to end on a DGX Spark GB10 (all fixes below are in this
+tree):
 
 | Stage | Result |
 |---|---|
-| image build (base + vllm 0.32 + overlay + patch) | passes |
-| container import chain | passes after installing `deploy/tested-pip-freeze.txt` (was missing ~80 packages) |
-| engine stage 0 weight load (30 shards) | passes |
-| engine stage 1 model registration | **fails**: `Ming3TTSForConditionalGeneration` is not resolved by vllm's registry, API server crash-loops |
+| image build (base + vllm 0.32 + overlay + patches) | passes |
+| container import chain | passes with `deploy/tested-pip-freeze.txt` (the bare recipe was missing ~80 packages) |
+| engine startup | passes once the released `vllm-omni==0.30.0` package is installed — its dist-info/plugin registration is required even though the source overlay shadows the modules |
+| serving + zero-shot cloning | verified: `/v1/models` lists `ming3`, a reference from `voices/` clones and streams 44.1 kHz PCM |
+| cold start | first request pays ~40 s of graph capture; the entrypoint's warmup request absorbs it |
 
-The serving deployment behind `tts.angineer.cn` predates this repository and
-runs a hand-assembled container; the compose path has not reached parity with
-it yet. Track the gap in the issue tracker before relying on `./deploy.sh` in
-production. The dependency pinning above and the length-cap patch are correct
-and worth keeping.
+Known environment constraint: a 121 GiB unified-memory Spark runs **one** engine
+only. Two full instances exhaust the GPU allocator (`NV_ERR_NO_MEMORY`) even
+when `free` reports tens of GiB available — stop the other engine before
+starting a second one. The build also needs codeload reachability in the image
+build; if GitHub is blocked, download the pinned tarball yourself and swap the
+`curl` line for a `COPY`.
 
 ## Result
 
