@@ -19,9 +19,13 @@ tree):
 Known environment constraint: a 121 GiB unified-memory Spark runs **one** engine
 only. Two full instances exhaust the GPU allocator (`NV_ERR_NO_MEMORY`) even
 when `free` reports tens of GiB available — stop the other engine before
-starting a second one. The build also needs codeload reachability in the image build; if GitHub is
+starting a second one. The first-boot JIT compilation also commits tens of GiB
+of **virtual** memory (nvcc jobs + engine): boot on a quiet machine, or the
+kernel commit limit trips a restart loop that trips the fleet's memory guardian.
+The build also needs codeload reachability in the image build; if GitHub is
 blocked, download the pinned tarball yourself and swap the `curl` line for a
-`COPY`. Engine startup needs `--stage-init-timeout 1800` on the first boot.
+`COPY`. Engine startup needs `--stage-init-timeout 1800` on the first boot; the
+compiled-kernel cache accumulates across restarts, so repeated boots converge.
 
 ## Result
 
