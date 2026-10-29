@@ -30,11 +30,11 @@ RUN pip install --no-cache-dir \
       --extra-index-url "${TORCH_INDEX_URL}" --index-url "${PIP_INDEX_URL}" \
       vllm==0.32.0 "torch==2.13.0" "torchvision==0.28.0" "torchaudio==2.11.0"
 
-# vLLM-Omni source overlay pinned to PR #9198 head (still a draft). The
-# retries matter: codeload drops connections often enough to fail builds.
+# vLLM-Omni source overlay pinned to PR #9198 head (open review, not merged).
+# The retries matter: codeload drops connections often enough to fail builds.
 RUN mkdir -p /opt/pr9198 \
  && curl -fsSL --retry 10 --retry-all-errors --retry-delay 4 --retry-max-time 900 -m 1200 \
-      https://codeload.github.com/vllm-project/vllm-omni/tar.gz/091f736324bd347d19282840d0d1298180f3ae6b \
+      https://codeload.github.com/vllm-project/vllm-omni/tar.gz/c0b1351ef54d85a2a860f7bdf75c4dbcfa08c472 \
     | tar -xz -C /opt/pr9198 --strip-components=1
 
 # The overlay validates per-request max_new_tokens against a hard-coded

@@ -2,7 +2,7 @@
 # Read-only check of upstream versions. Changes nothing.
 set -euo pipefail
 
-echo "pinned in this repo: overlay 091f7363  vllm 0.32.0  weights 8cf79a89"
+echo "pinned in this repo: overlay c0b1351e  vllm 0.32.0  weights 8cf79a89"
 
 PY=$(command -v python3 || command -v python || true)
 

@@ -126,8 +126,9 @@ word for word — a mismatch shifts prosody and can sound like a dialect.
   one octave down, and muffled.
 - **Cold start.** First batch after a restart can show a 45 s TTFT; the image
   runs a warmup request in the background to absorb it.
-- **Pinned overlay.** vLLM-Omni PR #9198 (`091f7363`) is still a draft. The
-  Dockerfile pins that commit; replace it with a released package once merged.
+- **Pinned overlay.** vLLM-Omni PR #9198 (`c0b1351e`) is open for review, not
+  merged. The Dockerfile pins that commit; replace it with a released package
+  once merged.
 - **0.5B is a different model branch.** `Ming-3.0-tts-0.5B` is Qwen2.5 dense +
   DiT with patch size 1 and does not load in this pipeline (patch size 4).
 - **`sample_rate` is rejected** by the current adapter for every value. Omit
@@ -191,7 +192,7 @@ not expose 8094 or 8101 directly.
 
 ## Updating
 
-The repo pins the base image tag, `vllm==0.32.0`, overlay `091f7363`, and
+The repo pins the base image tag, `vllm==0.32.0`, overlay `c0b1351e`, and
 weights `8cf79a89`; upstream changes do not arrive until you change them.
 When PR #9198 merges and a newer vllm-omni release ships, remove the overlay,
 install that release, rebuild, and rerun `scripts/probe10.py`. Keep the
