@@ -1,7 +1,11 @@
 # Pure vLLM stack for Ming-3.0-TTS on DGX Spark (GB10, aarch64, CUDA 13).
 # Base: NVIDIA's own CUDA image (public, multi-arch). Nothing here comes from
 # another inference framework — vLLM 0.32 + the vLLM-Omni overlay only.
-FROM nvidia/cuda:13.0.3-devel-ubuntu24.04
+# Override at build time: BASE_IMAGE=<ref> ./build.sh (or ./deploy.sh).
+# A replacement base must stay Ubuntu 24.04 + CUDA 13 compatible (the apt
+# packages, PEP 668 workaround, and cu130 torch index below assume it).
+ARG BASE_IMAGE=nvidia/cuda:13.0.3-devel-ubuntu24.04
+FROM ${BASE_IMAGE}
 
 ARG PIP_INDEX_URL=https://pypi.org/simple
 ARG TORCH_INDEX_URL=https://download.pytorch.org/whl/cu130
@@ -30,11 +34,14 @@ RUN pip install --no-cache-dir \
       --extra-index-url "${TORCH_INDEX_URL}" --index-url "${PIP_INDEX_URL}" \
       vllm==0.32.0 "torch==2.13.0" "torchvision==0.28.0" "torchaudio==2.11.0"
 
+# Optional GitHub mirror prefix for mainland builds, e.g.
+# GH_PROXY=https://gh-proxy.com/ ./build.sh. Empty means direct.
+ARG GH_PROXY=
 # vLLM-Omni source overlay pinned to PR #9198 head (open review, not merged).
 # The retries matter: codeload drops connections often enough to fail builds.
 RUN mkdir -p /opt/pr9198 \
- && curl -fsSL --retry 10 --retry-all-errors --retry-delay 4 --retry-max-time 900 -m 1200 \
-      https://codeload.github.com/vllm-project/vllm-omni/tar.gz/c0b1351ef54d85a2a860f7bdf75c4dbcfa08c472 \
+ && curl -fsSL --retry 10 --retry-all-errors --retry-delay 4 --retry-max-time 900 -m 12000 \
+      "${GH_PROXY}https://github.com/vllm-project/vllm-omni/archive/c0b1351ef54d85a2a860f7bdf75c4dbcfa08c472.tar.gz" \
     | tar -xz -C /opt/pr9198 --strip-components=1
 
 # The overlay validates per-request max_new_tokens against a hard-coded
