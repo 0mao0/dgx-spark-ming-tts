@@ -14,13 +14,13 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PIP_BREAK_SYSTEM_PACKAGES=1 \
     PYTHONUNBUFFERED=1
 
-# Python 3.12 (Ubuntu 24.04 default), nginx for the streaming proxy, and the
-# shared libraries the serving path loads: ffmpeg for torchcodec, libsndfile
-# for soundfile, libgl/libglib for opencv.
+# Python 3.12 (Ubuntu 24.04 default) and the shared libraries the serving path
+# loads: ffmpeg for torchcodec, libsndfile for soundfile, libgl/libglib for
+# opencv.
 RUN apt-get update \
  && apt-get install -y --no-install-recommends \
       python3.12 python3-pip python3-dev ninja-build cmake build-essential \
-      nginx curl ca-certificates git \
+      curl ca-certificates git \
       libgl1 libglib2.0-0 libsndfile1 ffmpeg libgomp1 \
  && rm -rf /var/lib/apt/lists/*
 
@@ -69,13 +69,13 @@ RUN pip install --no-cache-dir --no-deps --ignore-installed \
       --index-url "${PIP_INDEX_URL}" transformers==5.14.1 tokenizers==0.22.2 huggingface_hub==1.33.0
 
 COPY deploy/ming3_9198_gb10.yaml /opt/ming/deploy.yaml
-COPY deploy/nginx_ming_proxy.conf /opt/ming/nginx.conf
 COPY deploy/warm_ming.py /opt/ming/warm_ming.py
 COPY entrypoint.sh /opt/ming/entrypoint.sh
 RUN chmod +x /opt/ming/entrypoint.sh
 
+ARG PORT=8094
 ENV PYTHONPATH=/opt/pr9198 \
     VLLM_USE_V1=1
 
-EXPOSE 8094 8101
+EXPOSE ${PORT}
 ENTRYPOINT ["/opt/ming/entrypoint.sh"]

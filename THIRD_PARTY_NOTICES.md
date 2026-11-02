@@ -9,7 +9,6 @@ source code.
 | [inclusionAI/Ming-3.0-tts-tiny](https://huggingface.co/inclusionAI/Ming-3.0-tts-tiny) | model weights, downloaded by the user | MIT |
 | [vLLM](https://github.com/vllm-project/vllm) 0.32.0 | inference runtime, installed with pip | Apache-2.0 |
 | [vLLM-Omni](https://github.com/vllm-project/vllm-omni) PR #9119 / #9198 | pipeline and serving overlay, downloaded by the user | Apache-2.0 |
-| [nginx](https://nginx.org/) | streaming proxy, configuration only | BSD-2-Clause |
 | [matplotlib](https://matplotlib.org/) / [Pillow](https://python-pillow.org/) | chart scripts | PSF-based / HPND |
 | [CosyVoice](https://github.com/QwenAudio/CosyVoice) sample voices | reference voices in `voices/` (Serena, Aiden, Vivian, Uncle Fu), 16 kHz mono | Apache-2.0 |
 

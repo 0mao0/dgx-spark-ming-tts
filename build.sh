@@ -12,4 +12,4 @@ BASE_IMAGE=${BASE_IMAGE:-nvidia/cuda:13.0.3-devel-ubuntu24.04}
 
 echo "building image (vLLM 0.32.0 + pinned vLLM-Omni overlay)"
 docker compose build "$@"
-echo "built: dgx-spark-ming-tts:0.1"
+echo "built: dgx-spark-ming-tts:0.2"

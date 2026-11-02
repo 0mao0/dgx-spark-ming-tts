@@ -5,6 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 START=1
+PORT=${PORT:-8094}
 for arg in "$@"; do
   case "$arg" in
     --no-start) START=0 ;;
@@ -56,7 +57,7 @@ docker compose up -d --build
 echo "[4/4] waiting for readiness (cold start ~190 s)"
 ready=0
 for _ in $(seq 1 180); do
-  if curl -sf http://127.0.0.1:8094/v1/models >/dev/null; then ready=1; break; fi
+  if curl -sf "http://127.0.0.1:$PORT/v1/models" >/dev/null; then ready=1; break; fi
   sleep 5
 done
 if [ "$ready" != 1 ]; then
@@ -65,8 +66,8 @@ if [ "$ready" != 1 ]; then
   exit 1
 fi
 
-curl -s http://127.0.0.1:8094/v1/models; echo
-curl -s http://127.0.0.1:8094/v1/audio/speech \
+curl -s "http://127.0.0.1:$PORT/v1/models"; echo
+curl -s "http://127.0.0.1:$PORT/v1/audio/speech" \
   -H 'Content-Type: application/json' \
   -d '{"model":"ming3","input":"部署完成，这是一段测试音频。","response_format":"wav"}' \
   -o demo.wav
@@ -76,4 +77,4 @@ w = wave.open("demo.wav")
 print(f"demo.wav: {w.getframerate()} Hz, {w.getnchannels()} ch, {w.getnframes()/w.getframerate():.2f} s")
 PY
 
-echo "ready: http://<this-host>:8094/v1  (proxy :8101)"
+echo "ready: http://<this-host>:$PORT/v1"
