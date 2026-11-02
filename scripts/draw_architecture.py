@@ -59,11 +59,11 @@ ax.add_patch(host)
 ax.text(1.4, 6.95, "DGX Spark (GB10)", fontsize=8.6, color="#44576B", fontweight="bold")
 ax.text(8.6, 6.95, "87 GiB used incl. other services", fontsize=6.6, color="#7A8A99", ha="right")
 
-box(1.5, 5.55, 7.0, 0.95, "nginx  :8101", "streaming proxy · buffering off", fs=8.8, subfs=7.1)
-arrow(5.0, 5.45, 5.0, 4.95, "localhost")
-box(1.5, 3.85, 7.0, 0.95, "vLLM-Omni  :8094", "stage 0 AR (MoE) → stage 1 flow decoder", fs=8.8, subfs=7.1)
+arrow(5.0, 7.35, 5.0, 5.75, "localhost")
+box(1.5, 4.7, 7.0, 0.95, "vLLM-Omni  :${PORT:-8094}", "stage 0 AR (MoE) → stage 1 flow decoder · docs off by default",
+    fs=8.8, subfs=7.1)
 
-arrow(5.0, 3.75, 5.0, 2.9, "")
+arrow(5.0, 4.6, 5.0, 2.9, "")
 box(1.6, 1.75, 6.8, 1.0, "Ming-3.0-tts-tiny", "17 GiB weights · 44100 Hz mono PCM16 · max 10 seqs",
     fc=DARK, fs=8.8, subfs=7.1)
 

@@ -59,7 +59,9 @@ Read `X-Audio-Sample-Rate` (44100) before playing raw PCM.
 ## Deploy your own
 
 Prerequisites: DGX Spark (GB10), Docker with NVIDIA runtime, `docker compose`,
-ports 8094 and 8101 free, about 40 GiB free disk, internet access.
+[`uv`](https://docs.astral.sh/uv/) and `python3` (download and patch the
+weights on the host), port 8094 free (override with `PORT=...`), about 40 GiB
+free disk, internet access.
 
 ```bash
 git clone https://github.com/0mao0/dgx-spark-ming-tts.git
@@ -70,14 +72,31 @@ cd dgx-spark-ming-tts
 `deploy.sh` downloads the 17 GiB weights on first run, builds the image
 (vLLM 0.32.0 + the pinned vLLM-Omni overlay), starts the container, and waits
 until the API answers. A cold start takes about 190 s. When it prints `ready`,
-the API is at `http://<spark>:8094/v1` and the streaming proxy at
-`http://<spark>:8101/v1`.
+the API is at `http://<spark>:8094/v1` (or `http://<spark>:$PORT/v1`).
+
+Runtime environment variables (set them when invoking `deploy.sh` /
+`docker compose`):
+
+| Variable | Default | Meaning |
+|---|---|---|
+| `PORT` | `8094` | HTTP port vLLM serve listens on |
+| `SERVED_NAME` | `ming3` | model name exposed at `/v1/models` |
+| `DISABLE_DOCS` | `1` | `1` turns off `/docs`, `/redoc`, `/openapi.json`; set `0` to expose them |
+
+`./deploy.sh --no-start` stops after downloading and patching the weights: no
+image build, no container. To build the image alone (e.g. after a Dockerfile
+change), use `./build.sh`; extra flags go straight to `docker compose build`.
 
 Slow network in mainland China: pass a mirror to the build.
 
 ```bash
 PIP_INDEX_URL=https://mirrors.aliyun.com/pypi/simple ./deploy.sh
 ```
+
+The base image is overridable without touching the Dockerfile:
+`BASE_IMAGE=<ref> ./build.sh` (or `./deploy.sh`); the default is the pinned
+`nvidia/cuda:13.0.3-devel-ubuntu24.04`, and any replacement must stay Ubuntu
+24.04 + CUDA 13 compatible.
 
 ## API
 
@@ -180,15 +199,19 @@ word for word — a mismatch shifts prosody and can sound like a dialect.
 ## Operations
 
 ```bash
-docker compose logs -f          # engine and proxy logs
+docker compose logs -f          # engine logs
 docker compose restart          # restart the service
 docker compose down             # stop; weights and image stay
 ./deploy.sh                     # idempotent re-deploy / update
+./deploy.sh --no-start          # weights only: download + patch, no build/start
+./build.sh                      # image only: docker compose build, no start
 ```
 
 Public HTTPS with a bearer token (optional): run `deploy/vps/install.sh` on a
 VPS, as described in its header. The engine itself has no authentication; do
-not expose 8094 or 8101 directly.
+not expose the port directly. The engine's Swagger/ReDoc endpoints are off by
+default (`DISABLE_DOCS=1`), matching what the removed in-container nginx proxy
+used to hide.
 
 ## Updating
 

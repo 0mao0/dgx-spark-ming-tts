@@ -8,3 +8,4 @@ models/
 .env
 ming-token.conf
 !voices/*.wav
+.idea/
